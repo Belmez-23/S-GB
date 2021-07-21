@@ -4,6 +4,7 @@ type: php:8.0
 
 runtime:
     extensions:
+        - pdo_mysql
         - apcu
         - mbstring
         - sodium
@@ -28,7 +29,8 @@ web:
             expires: 1h
             passthru: "/index.php"
 
-
+relationships:
+    database: "db:mysql"
 
 mounts:
     "/var": { source: local, source_path: var }
