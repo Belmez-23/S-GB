@@ -22,7 +22,7 @@ class Conference
     /**
      * @ORM\Column(type="string", length=255)
      */
-    private $ÑÑcity;
+    private $city;
 
     /**
      * @ORM\Column(type="string", length=4)
@@ -44,19 +44,24 @@ class Conference
         $this->comments = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        return $this->city.' '.$this->year;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getÑÑcity(): ?string
+    public function getCity(): ?string
     {
-        return $this->ÑÑcity;
+        return $this->city;
     }
 
-    public function setÑÑcity(string $ÑÑcity): self
+    public function setCity(string $city): self
     {
-        $this->ÑÑcity = $ÑÑcity;
+        $this->city = $city;
 
         return $this;
     }
