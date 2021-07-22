@@ -1,7 +1,7 @@
 security:
     # https://symfony.com/doc/current/security/experimental_authenticators.html
-    enable_authenticator_manager: true
-    password_hashers:
+    # enable_authenticator_manager: true
+    encoders:
         App\Entity\Admin:
             algorithm: auto
 
