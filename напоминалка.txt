@@ -1,0 +1,5 @@
+Запуск основной базы:
+symfony serve -d
+Запуск тестовой базы
+APP_ENV=test symfony server:start -d
+make tests
