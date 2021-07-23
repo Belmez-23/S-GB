@@ -72,7 +72,7 @@ class CommentMessageHandler implements MessageHandlerInterface
                 ->context(['comment' => $comment])
             );
         } elseif ($this->logger) {
-            $this->logger->debug('Dropping comment message', ['comment' => $comment->getId(), 'status' => $comment->getStatus()]);
+            $this->logger->debug('Dropping comment message', ['comment' => $comment->getId(), 'status' => $comment->getState()]);
         }
 
     }

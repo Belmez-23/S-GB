@@ -147,12 +147,12 @@ class Comment
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getState(): ?string
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setState(string $status): self
     {
         $this->status = $status;
 
