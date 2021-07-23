@@ -12,7 +12,7 @@ class ConferenceControllerTest extends WebTestCase
     public function testIndex()
     {
         $client = static::createClient();
-        $client->request('GET', '/');
+        $client->request('GET', '/en/');
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h2', 'Give your feedback');
@@ -21,7 +21,7 @@ class ConferenceControllerTest extends WebTestCase
     public function testConferencePage()
     {
         $client = static::createClient();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/en/');
 
         $this->assertCount(2, $crawler->filter('h4'));
 
@@ -30,7 +30,7 @@ class ConferenceControllerTest extends WebTestCase
         $this->assertPageTitleContains('Canterlot');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h2', 'Canterlot 2019');
-        $this->assertSelectorExists('div:contains("There are 1 comments")');
+        $this->assertSelectorExists('div:contains("There is one comment")');
     }
 
     public function testCommentSubmission()
@@ -45,7 +45,7 @@ class ConferenceControllerTest extends WebTestCase
         $this->assertResponseRedirects();
         $client->followRedirect();
 
-        $client->request('GET', '/conference/canterlot-2019');
+        $client->request('GET', '/en/conference/canterlot-2019');
         $client->submitForm('Submit', [
             'comment_form[author]' => 'Derpy Hooves',
             'comment_form[text]' => 'derp',

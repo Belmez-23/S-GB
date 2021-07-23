@@ -33,16 +33,24 @@ class ConferenceController extends AbstractController
         $this->bus = $bus;
     }
 
-    #[Route('/', name: 'homepage')]
-    public function index(ConferenceRepository $conferenceRepository): Response
+    #[Route('/')]
+    public function indexNoLocale(): Response
     {
-               return new Response($this->twig->render('conference/index.html.twig', [
-                    'conferences' => $conferenceRepository->findAll(),
-                ]));
-
+        return $this->redirectToRoute('homepage', ['_locale' => 'en']);
     }
 
-#[Route('/conference_header', name: 'conference_header')]
+    #[Route('/{_locale<%app.supported_locales%>}/', name: 'homepage')]
+    public function index(ConferenceRepository $conferenceRepository): Response
+    {
+        $response = new Response($this->twig->render('conference/index.html.twig', [
+            'conferences' => $conferenceRepository->findAll(),
+        ]));
+        $response->setSharedMaxAge(3600);
+
+        return $response;
+    }
+
+    #[Route('/{_locale<%app.supported_locales%>}/conference_header', name: 'conference_header')]
     public function conferenceHeader(ConferenceRepository $conferenceRepository): Response
     {
         $response = new Response($this->twig->render('conference/header.html.twig', [
@@ -53,80 +61,55 @@ class ConferenceController extends AbstractController
         return $response;
     }
 
-    #[Route('/conference/{slug}', name: 'conference')]
-    public function show(
-        Request $request,
-        Conference $conference,
-        CommentRepository $commentRepository,
-        ConferenceRepository $conferenceRepository,
-        string $photoDir,
-        NotifierInterface $notifier): Response
+    #[Route('/{_locale<%app.supported_locales%>}/conference/{slug}', name: 'conference')]
+    public function show(Request $request, Conference $conference, CommentRepository $commentRepository, NotifierInterface $notifier, string $photoDir): Response
     {
         $comment = new Comment();
         $form = $this->createForm(CommentFormType::class, $comment);
-
         $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $comment->setConference($conference);
-            if($photo = $form['photo']->getData()) {
+            if ($photo = $form['photo']->getData()) {
                 $filename = bin2hex(random_bytes(6)).'.'.$photo->guessExtension();
                 try {
                     $photo->move($photoDir, $filename);
                 } catch (FileException $e) {
-
+                    // unable to upload the photo, give up
                 }
                 $comment->setPhotoFilename($filename);
             }
+
             $this->entityManager->persist($comment);
             $this->entityManager->flush();
 
             $context = [
-              'user_ip' => $request->getClientIp(),
-              'user_agent' => $request->headers->get('user-agent'),
-              'referrer' => $request->headers->get('referer'),
-              'permalink' => $request->getUri(),
+                'user_ip' => $request->getClientIp(),
+                'user_agent' => $request->headers->get('user-agent'),
+                'referrer' => $request->headers->get('referer'),
+                'permalink' => $request->getUri(),
             ];
+
             $reviewUrl = $this->generateUrl('review_comment', ['id' => $comment->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->bus->dispatch(new CommentMessage($comment->getId(), $reviewUrl, $context));
 
-            $notifier->send(new Notification('Thank you, come again, ', ['browser']));
+            $notifier->send(new Notification('Thank you for the feedback; your comment will be posted after moderation.', ['browser']));
 
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }
 
         if ($form->isSubmitted()) {
-            $notifier->send(new Notification('Hueston, we have a problem. ', ['browser']));
+            $notifier->send(new Notification('Can you check your submission? There are some problems with it.', ['browser']));
         }
 
         $offset = max(0, $request->query->getInt('offset', 0));
         $paginator = $commentRepository->getCommentPaginator($conference, $offset);
 
         return new Response($this->twig->render('conference/show.html.twig', [
-            'conferences' => $conferenceRepository->findAll(),
             'conference' => $conference,
             'comments' => $paginator,
             'previous' => $offset - CommentRepository::PAGINATOR_PER_PAGE,
             'next' => min(count($paginator), $offset + CommentRepository::PAGINATOR_PER_PAGE),
             'comment_form' => $form->createView(),
         ]));
-    }
-
-    #[Route('/hello/{name}', name: 'easteregg')]
-    public function easterEgg($name): Response
-    {
-        $greet = '';
-        if ($name) {
-            $greet = sprintf('<h1>Hello %s!</h1>', htmlspecialchars($name));
-        }
-
-        return new Response(<<<EOF
- <html>
-     <body>
-        $greet
-         <img src="/images/under-construction.gif" />
-     </body>
- </html>
-EOF
-        );
     }
 }
